@@ -1,5 +1,24 @@
 <?php
 
+declare(strict_types=1);
+
+// Enable error reporting
+error_reporting(E_ALL);
+ini_set('display_errors', '1');
+ini_set('display_startup_errors', '1');
+
+// Register fatal shutdown handler to catch errors before exit
+register_shutdown_function(function() {
+    $error = error_get_last();
+    if ($error !== null && in_array($error['type'], [E_ERROR, E_PARSE, E_CORE_ERROR, E_COMPILE_ERROR])) {
+        http_response_code(500);
+        header('Content-Type: text/html; charset=utf-8');
+        echo "<h1>Fatal Startup Error</h1>";
+        echo "<p><strong>Message:</strong> " . htmlspecialchars($error['message']) . "</p>";
+        echo "<p><strong>File:</strong> " . htmlspecialchars($error['file']) . " on line " . $error['line'] . "</p>";
+    }
+});
+
 // Map underscore env vars from Vercel to CodeIgniter's expected dot notation
 $envMappings = [
     'app_baseURL' => 'app.baseURL',
@@ -21,24 +40,13 @@ foreach ($envMappings as $vercelKey => $ciKey) {
     }
 }
 
-// Set error reporting to catch issues
-ini_set('display_errors', '1');
-ini_set('display_startup_errors', '1');
-error_reporting(E_ALL);
-
-try {
-    define('FCPATH', realpath(__DIR__ . '/../public') . DIRECTORY_SEPARATOR);
-    chdir(FCPATH);
-
-    // Forward all requests to the CodeIgniter front controller in public/index.php
-    require __DIR__ . '/../public/index.php';
-} catch (\Throwable $e) {
-    http_response_code(500);
-    echo "<h1>Application Error (500)</h1>";
-    echo "<p><strong>Message:</strong> " . htmlspecialchars($e->getMessage()) . "</p>";
-    echo "<p><strong>File:</strong> " . htmlspecialchars($e->getFile()) . " on line " . $e->getLine() . "</p>";
-    echo "<pre>" . htmlspecialchars($e->getTraceAsString()) . "</pre>";
+// Adjust REQUEST_URI if needed
+if (!isset($_SERVER['SCRIPT_NAME'])) {
+    $_SERVER['SCRIPT_NAME'] = '/index.php';
 }
+
+require __DIR__ . '/../public/index.php';
+
 
 
 
