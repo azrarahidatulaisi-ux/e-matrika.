@@ -53,7 +53,27 @@ class Paths
      * for maximum security, keeping it out of the app and/or
      * system directories.
      */
-    public string $writableDirectory = __DIR__ . '/../../writable';
+    public string $writableDirectory;
+
+    public function __construct()
+    {
+        // On Vercel / AWS Lambda / Serverless, the root filesystem is read-only except /tmp
+        if (getenv('VERCEL') || isset($_ENV['VERCEL']) || isset($_SERVER['VERCEL'])) {
+            $tmpWritable = sys_get_temp_dir() . '/ci4_writable';
+            if (!is_dir($tmpWritable)) {
+                @mkdir($tmpWritable, 0777, true);
+                @mkdir($tmpWritable . '/cache', 0777, true);
+                @mkdir($tmpWritable . '/logs', 0777, true);
+                @mkdir($tmpWritable . '/session', 0777, true);
+                @mkdir($tmpWritable . '/debugbar', 0777, true);
+                @mkdir($tmpWritable . '/uploads', 0777, true);
+            }
+            $this->writableDirectory = $tmpWritable;
+        } else {
+            $this->writableDirectory = __DIR__ . '/../../writable';
+        }
+    }
+
 
     /**
      * ---------------------------------------------------------------

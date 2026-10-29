@@ -18,6 +18,20 @@ class App extends BaseConfig
      */
     public string $baseURL = 'http://localhost/e-Matrika/public/';
 
+    public function __construct()
+    {
+        parent::__construct();
+
+        if (getenv('VERCEL') || isset($_SERVER['HTTP_X_FORWARDED_HOST']) || isset($_SERVER['HTTP_HOST'])) {
+            $protocol = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') || (isset($_SERVER['HTTP_X_FORWARDED_PROTO']) && $_SERVER['HTTP_X_FORWARDED_PROTO'] === 'https') ? 'https://' : 'http://';
+            $host = $_SERVER['HTTP_X_FORWARDED_HOST'] ?? ($_SERVER['HTTP_HOST'] ?? '');
+            if (!empty($host)) {
+                $this->baseURL = rtrim($protocol . $host, '/') . '/';
+            }
+        }
+    }
+
+
     /**
      * Allowed Hostnames in the Site URL other than the hostname in the baseURL.
      * If you want to accept multiple Hostnames, set this.
